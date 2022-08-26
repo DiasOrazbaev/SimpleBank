@@ -9,34 +9,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createRandomEntrie(t *testing.T, account *Account) *Entry {
-	arg := CreateEntrieParams{
+func createRandomEntry(t *testing.T, account Account) Entry {
+	arg := CreateEntryParams{
 		AccountID: account.ID,
 		Amount:    util.RandomMoney(),
 	}
 
-	in, err := testQueries.CreateEntrie(context.Background(), arg)
-	require.NoError(t, err, "Error on creating accout")
-	require.NotNil(t, account, "Empty response from db")
+	entry, err := testQueries.CreateEntry(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, entry)
 
-	require.Equal(t, arg.AccountID, in.AccountID)
-	require.Equal(t, arg.Amount, in.Amount)
+	require.Equal(t, arg.AccountID, entry.AccountID)
+	require.Equal(t, arg.Amount, entry.Amount)
 
-	require.NotZero(t, account.ID)
-	require.NotZero(t, account.CreatedAt)
+	require.NotZero(t, entry.ID)
+	require.NotZero(t, entry.CreatedAt)
 
-	return &in
+	return entry
 }
 
 func TestCreateEntry(t *testing.T) {
-	acc := createRandomAccount(t)
-	createRandomEntrie(t, &acc)
+	account := createRandomAccount(t)
+	createRandomEntry(t, account)
 }
 
 func TestGetEntry(t *testing.T) {
 	account := createRandomAccount(t)
-	entry1 := createRandomEntrie(t, &account)
-	entry2, err := testQueries.GetEntrie(context.Background(), entry1.ID)
+	entry1 := createRandomEntry(t, account)
+	entry2, err := testQueries.GetEntry(context.Background(), entry1.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, entry2)
 
@@ -49,19 +49,21 @@ func TestGetEntry(t *testing.T) {
 func TestListEntries(t *testing.T) {
 	account := createRandomAccount(t)
 	for i := 0; i < 10; i++ {
-		createRandomEntrie(t, &account)
+		createRandomEntry(t, account)
 	}
 
-	arg := ListEntrieParams{
-		Limit:  5,
-		Offset: 5,
+	arg := ListEntriesParams{
+		AccountID: account.ID,
+		Limit:     5,
+		Offset:    5,
 	}
 
-	entries, err := testQueries.ListEntrie(context.Background(), arg)
+	entries, err := testQueries.ListEntries(context.Background(), arg)
 	require.NoError(t, err)
 	require.Len(t, entries, 5)
 
 	for _, entry := range entries {
 		require.NotEmpty(t, entry)
+		require.Equal(t, arg.AccountID, entry.AccountID)
 	}
 }
